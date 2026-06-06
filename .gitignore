@@ -1,0 +1,23 @@
+# --- Sensitive / local data ---
+# Cached coordinates (my_coordinates.txt) and the email distro list
+# (recipients.txt) live in .txt files -- keep them out of the repo.
+*.txt
+# Personal config (coastal.env); the committed coastal.env.example is kept.
+coastal.env
+
+# --- Generated output ---
+reports/
+logs/
+*.pdf
+
+# --- Downloaded GRIB temp files (keep the folder, ignore its contents) ---
+gribs/*
+!gribs/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+
+# --- macOS / editor ---
+.DS_Store
+.vscode/
