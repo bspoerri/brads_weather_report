@@ -36,6 +36,7 @@ def _get_points():
 
 
 def _relative_location():
+    """NWS 'relativeLocation' properties (nearest city/state), or {}."""
     return _get_points().get('relativeLocation', {}).get('properties', {})
 
 

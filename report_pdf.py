@@ -14,6 +14,8 @@ FONT_SIZE_PT  = 11
 
 
 def _appkit_pdf(text, path):
+    """Render `text` to a PDF via AppKit/CoreText (monospaced, with
+    color-emoji support). Raises if AppKit isn't usable."""
     import AppKit
     from AppKit import NSTextView, NSMakeRect
     from Foundation import NSAttributedString
@@ -48,6 +50,8 @@ def _appkit_pdf(text, path):
 
 
 def _cupsfilter_pdf(text, path):
+    """Fallback: render `text` to a plain monospaced PDF with the
+    `cupsfilter` CLI (no emoji, but works headless)."""
     import subprocess
     import tempfile
 

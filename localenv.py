@@ -14,6 +14,8 @@ LOCAL_ENV_FILE = 'coastal.env'
 
 
 def load(filename=LOCAL_ENV_FILE):
+    """Parse the local env file (if present) and set each KEY=value in
+    os.environ without overriding variables already set."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
     if not os.path.exists(path):
         return

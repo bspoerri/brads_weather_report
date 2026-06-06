@@ -30,6 +30,8 @@ def _precip_type(amounts):
 
 
 def _amount_phrase(amounts):
+    """Return (kind, phrase) for a day, e.g. ('rain', ', ~0.20 in
+    expected'); the phrase is empty when the amount is only a trace."""
     kind, amount = _precip_type(amounts)
     if amount < TRACE_THRESHOLD:
         return kind, ''

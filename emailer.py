@@ -30,6 +30,8 @@ def _esc(s):
 
 
 def _build_script(pdf_abs, recipients, sender, subject, body):
+    """Compose the AppleScript that creates an outgoing Mail message
+    with the PDF attached and sends it to every recipient."""
     lines = [
         'tell application "Mail"',
         ('  set newMessage to make new outgoing message with properties '
@@ -56,14 +58,21 @@ def _build_script(pdf_abs, recipients, sender, subject, body):
 
 
 def send_pdf(pdf_path, recipients=None, sender=None,
-             subject='Coastal Report', body=None):
+             subject='Coastal Report', body=None, test=False):
     """
     Email `pdf_path` to `recipients` (defaults to the distro list),
     sent from `sender` (defaults to COASTAL_SENDER). Returns True on
     success.
+
+    When `test` is True the message goes only to the sender, bypassing
+    the distro list -- handy for verifying a send without notifying
+    everyone.
     """
     sender = sender or os.environ.get('COASTAL_SENDER', PLACEHOLDER_SENDER)
-    recipients = recipients if recipients is not None else load_recipients()
+    if test:
+        recipients = [sender]
+    elif recipients is None:
+        recipients = load_recipients()
     if not recipients:
         print('Email: no recipients in the distro list; skipping send.')
         return False

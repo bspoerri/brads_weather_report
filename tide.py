@@ -1,3 +1,10 @@
+"""
+Tide forecast from NOAA CO-OPS (Tides & Currents).
+
+Finds the nearest tide station, pulls this week's high/low predictions,
+and flags unusually high/low tides by comparing them against the past
+year of observed high/low extremes.
+"""
 import check_location
 import datetime as dt
 import pandas as pd
@@ -21,8 +28,13 @@ _stations_cache = None
 
 
 def get_tide_stations():
-    # Cached: both the coast-proximity check and the tide forecast
-    # need this list, but it only needs fetching once per run.
+    """
+    DataFrame of NOAA tide-prediction stations (id index; name, lat,
+    lng), or None if the request fails.
+
+    Cached: both the coast-proximity check and the tide forecast need
+    this list, but it only needs fetching once per run.
+    """
     global _stations_cache
     if _stations_cache is not None:
         return _stations_cache
@@ -45,6 +57,8 @@ def get_tide_stations():
 
 
 def clean_tide_df(df):
+    """Normalize the raw CO-OPS columns: split the timestamp into
+    'date' ('%Y%m%d') and '12hr_time', and rename value/type fields."""
     if 't' in df.columns:
         df['t'] = pd.to_datetime(df['t'])
         # '%Y%m%d' to match days_dict() and the wind/wave date columns.
@@ -60,6 +74,8 @@ def clean_tide_df(df):
 
 
 def get_weekly_hilo_prediction(station: str):
+    """High/low tide predictions for a station from today through the
+    end of the week, or None on failure."""
     params = {
         **TIDE_API_DEFAULTS,
         'station'    : station,
@@ -78,6 +94,8 @@ def get_weekly_hilo_prediction(station: str):
 
 
 def get_hist_hilo(station: str):
+    """Past year of observed high/low tides for a station (used to set
+    the outlier thresholds), or None on failure."""
     params = {
         **TIDE_API_DEFAULTS,
         'station'    : station,
@@ -96,6 +114,12 @@ def get_hist_hilo(station: str):
 
 def flag_outlier_tides(predictions_df, hist_hilos,
                        low_band=0.05, high_band=0.95):
+    """
+    Add an 'outlier' column to the predictions: +1 if a high tide
+    exceeds the historical `high_band` quantile, -1 if a low tide falls
+    below the `low_band` quantile, else NaN. Thresholds are computed
+    separately for highs and lows from the historical extremes.
+    """
     hist_hilos['adj_type'] = hist_hilos['type'].str[0]
     tide_bounds = (
         hist_hilos.groupby('adj_type')['tide_ft']
@@ -115,6 +139,11 @@ def flag_outlier_tides(predictions_df, hist_hilos,
 
 
 def combine_tide_data():
+    """
+    End-to-end tide pipeline: nearest station -> weekly predictions ->
+    outlier flags from a year of history -> 12-hour time strings.
+    Returns the prediction DataFrame, or None if any step fails.
+    """
     stations = get_tide_stations()
     if stations is None:
         return None
@@ -131,6 +160,8 @@ def combine_tide_data():
 
 
 def tide_summary(df, days):
+    """Time-to-next-tide plus the high/low tide times for each day in
+    `days`, marking any outlier tides as VERY HIGH / VERY LOW."""
     next_tide  = df[df['date_time'] >= dt.datetime.now()].iloc[0]
     until_next = (
         (next_tide['date_time'] - dt.datetime.now()).total_seconds() / 3600
@@ -166,6 +197,8 @@ def tide_summary(df, days):
 
 
 def tide_week_ahead(df):
+    """List only the outlier (very high / very low) tides over the
+    coming week, with date, time, and height."""
     content  = '📏 Extreme Tides (week ahead):\n'
     extremes = df[df['outlier'].isin([1, -1])]
 

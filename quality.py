@@ -31,6 +31,8 @@ ACRES_PER_SQ_MI  = 640
 
 
 def _epoch_ms_to_date(ms):
+    """Format an ArcGIS epoch-milliseconds value as 'MM/DD/YYYY', or
+    None if absent."""
     if ms in (None, ''):
         return None
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime('%m/%d/%Y')

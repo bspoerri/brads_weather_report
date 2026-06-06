@@ -77,6 +77,11 @@ def select_grid(cycle: str, forecast_hour: str):
 
 
 def get_latest_cycle():
+    """
+    Most recent GFS-Wave run that should be published, as
+    (cycle_date '%Y%m%d', cycle_hour '00'/'06'/'12'/'18'). A ~6-hour
+    lag accounts for model run + upload time on NOMADS.
+    """
     lagged   = datetime.now(timezone.utc).hour - 6
     cycle_dt = (time_dict['TODAY'] if lagged >= 0
                 else time_dict['YESTERDAY'])
@@ -88,6 +93,7 @@ def get_latest_cycle():
 
 
 def deg_to_compass(deg):
+    """Convert a bearing in degrees to a 16-point compass label."""
     dirs = [
         'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
         'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
@@ -96,6 +102,13 @@ def deg_to_compass(deg):
 
 
 def get_wave_forecast():
+    """
+    Download the GFS-Wave GRIB2 files for the next 7 days (every 12 h),
+    sample the grid point nearest the location, and return a tidy
+    DataFrame of wave height / period / direction with local and UTC
+    timestamps. GRIB files are deleted after parsing. Returns an empty
+    DataFrame if nothing could be downloaded.
+    """
     lat, lng         = check_location.get_coordinates()
     cycle_dt, cycle  = get_latest_cycle()
     forecast_periods = [f'{h:03d}' for h in range(0, 169, 12)]
@@ -184,6 +197,8 @@ def get_wave_forecast():
 
 
 def wave_summary(df, days):
+    """Peak and smallest seas for each day in `days`, with the wave
+    height, peak period, and direction at those times."""
     content     = ''
     wave_df     = df[df['short_name'].isin(
         ['Wave Height', 'Peak Period', 'Peak Direction']
@@ -229,6 +244,8 @@ def wave_summary(df, days):
 
 
 def wave_week_ahead(df):
+    """Classify each day of the forecast as calm (<2 ft avg) or rough
+    (>6 ft avg) seas, by daily mean wave height."""
     height_df    = df[df['short_name'] == 'Wave Height']
     daily_height = height_df.groupby('local_date')['value'].mean()
 

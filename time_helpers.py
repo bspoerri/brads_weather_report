@@ -1,3 +1,10 @@
+"""
+Shared date/time utilities used across the report modules.
+
+Provides the local timezone (DST-aware), a table of common date stamps
+(today, tomorrow, end-of-week, etc.), and helpers to convert between
+the various string/Series time formats the data sources return.
+"""
 import os
 import pandas as pd
 from datetime import date, timedelta, datetime
@@ -44,6 +51,8 @@ def days_dict(*keys):
 
 
 def to_12hr(time_to_convert):
+    """Format a time as 12-hour 'HH:MM AM/PM'. Accepts a pandas Series
+    of '%H:%M' strings or a single datetime-like object."""
     if isinstance(time_to_convert, pd.Series):
         new_time = pd.to_datetime(time_to_convert, format='%H:%M')
         return new_time.dt.strftime('%I:%M %p')
@@ -51,6 +60,8 @@ def to_12hr(time_to_convert):
 
 
 def to_datestring(date_to_convert):
+    """Format a date as '%Y%m%d'. Accepts a pandas Series (tz-aware or
+    naive) or a single date/datetime object."""
     if isinstance(date_to_convert, pd.Series):
         if pd.api.types.is_datetime64tz_dtype(date_to_convert):
             return date_to_convert.dt.strftime('%Y%m%d')
@@ -59,6 +70,8 @@ def to_datestring(date_to_convert):
 
 
 def to_local_time(time_to_convert, ref_zone: str = 'UTC'):
+    """Convert a time (Series or scalar) to LOCAL_TZ. Naive inputs are
+    assumed to be in `ref_zone` (UTC by default) before converting."""
     ref_tz = ZoneInfo(ref_zone)
     if isinstance(time_to_convert, pd.Series):
         converted = pd.to_datetime(time_to_convert)

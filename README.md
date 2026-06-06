@@ -74,6 +74,7 @@ cp coastal.env.example coastal.env
 ```bash
 python main.py            # print the report + save a PDF to reports/
 python main.py --email    # also email the PDF to the distro list
+python main.py --test     # email only the sender (trial run, skips the distro list)
 ./run_daily.sh            # wrapper used by the scheduler (runs with --email)
 ```
 

@@ -1,3 +1,14 @@
+"""
+Entry point for Brad's Coastal Report.
+
+Assembles the text report (marine forecast, conditions, water quality,
+and a week-ahead outlook), prints it, saves it as a PDF under reports/,
+and -- when run with --email -- mails the PDF to the distribution list.
+
+    python main.py            print + save PDF
+    python main.py --email    also email the PDF to recipients.txt
+    python main.py --test     email only the sender (trial run)
+"""
 import os
 import sys
 from datetime import date
@@ -106,6 +117,8 @@ def build_report():
 
 
 def main():
+    """Resolve location, build the report, save the PDF, and optionally
+    email it (when --email is passed)."""
     resolve_location()
     report = build_report()
     print(report)
@@ -114,13 +127,15 @@ def main():
     report_pdf.save_pdf(report, pdf_path)
     print(f'\nSaved PDF: {os.path.abspath(pdf_path)}')
 
-    # Email the PDF to the distro list only when asked (run_daily.sh and
-    # the scheduled job pass --email); a bare `python main.py` won't send.
-    if '--email' in sys.argv:
-        emailer.send_pdf(
-            pdf_path,
-            subject=f'Coastal Report — {date.today():%A %m/%d/%Y}',
-        )
+    # Email only when asked. --email sends to the full distro list;
+    # --test sends only to the sender (for a safe trial run). A bare
+    # `python main.py` won't send anything.
+    test = '--test' in sys.argv
+    if '--email' in sys.argv or test:
+        subject = f'Coastal Report — {date.today():%A %m/%d/%Y}'
+        if test:
+            subject = '[TEST] ' + subject
+        emailer.send_pdf(pdf_path, subject=subject, test=test)
 
 
 if __name__ == '__main__':

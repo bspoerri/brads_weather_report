@@ -1,3 +1,9 @@
+"""
+Thin HTTP layer shared by the data modules: a JSON GET with consistent
+error handling and a default User-Agent, plus a streaming download for
+GRIB2 files. All errors are caught and reported, returning None so
+callers can degrade gracefully.
+"""
 import os
 import requests as req
 
@@ -50,6 +56,11 @@ def get_json_request(
 
 
 def save_grib_request(api_url: str, file_path: str, params: dict = None):
+    """
+    Stream a (binary) GRIB2 response to `file_path`. Used for the
+    GFS-Wave downloads, which are too large to hold in memory. Does
+    nothing and returns None if the request fails.
+    """
     try:
         response = req.get(
             api_url,

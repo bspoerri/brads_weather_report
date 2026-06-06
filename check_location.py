@@ -1,3 +1,10 @@
+"""
+Read the cached coordinates and find the nearest station.
+
+Reading is lazy and memoized so callers share one value without
+re-reading the file, and so the cache can be written by save_location()
+before it is first read.
+"""
 import numpy as np
 
 LOCATION_CACHE = 'my_coordinates.txt'
@@ -27,6 +34,9 @@ def get_coordinates():
 
 
 def find_nearest(df):
+    """Return the index label of the row in `df` (with 'lat'/'lng'
+    columns) closest to the cached coordinates, by Euclidean distance
+    in degrees."""
     query_point = get_coordinates()
     test_points = df.loc[:, 'lat':'lng'].to_numpy()
     distances = np.sqrt(np.sum((query_point - test_points)**2, axis=1))

@@ -1,3 +1,7 @@
+"""
+Write the working coordinates to a local cache file so the rest of the
+run (and check_location) can read a single source of truth.
+"""
 import subprocess
 import numpy as np
 
