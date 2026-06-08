@@ -17,7 +17,41 @@ if [[ "${1:-}" == "remove" ]]; then
     exit 0
 fi
 
-PYTHON="$(command -v python3)"
+# Pick the interpreter that actually has the project's dependencies.
+# launchd runs with a bare environment (no conda activation), so we must
+# bake in an absolute path to a python that can import the deps -- NOT
+# whatever `python3` happens to be on PATH when this script is run, which
+# is often the dependency-less system python at /usr/bin/python3.
+#
+# Order of preference:
+#   1. $COASTAL_PYTHON, if the caller set one explicitly
+#   2. the project's conda env (weather_env)
+#   3. python3 on PATH (manual / fallback)
+pick_python() {
+    local candidates=(
+        "${COASTAL_PYTHON:-}"
+        "$HOME/anaconda3/envs/weather_env/bin/python3"
+        "$HOME/miniconda3/envs/weather_env/bin/python3"
+        "$(command -v python3 || true)"
+    )
+    local c
+    for c in "${candidates[@]}"; do
+        [[ -n "$c" && -x "$c" ]] || continue
+        if "$c" -c "import numpy" >/dev/null 2>&1; then
+            echo "$c"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if ! PYTHON="$(pick_python)"; then
+    echo "ERROR: could not find a python3 with the project dependencies" >&2
+    echo "       (tried \$COASTAL_PYTHON, the weather_env conda env, and PATH)." >&2
+    echo "       Activate the env and re-run, or set COASTAL_PYTHON explicitly." >&2
+    exit 1
+fi
+
 mkdir -p "$HOME/Library/LaunchAgents" "$DIR/logs"
 
 cat > "$PLIST" <<EOF

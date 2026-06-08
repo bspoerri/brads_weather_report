@@ -2,6 +2,8 @@
 # Cached coordinates (my_coordinates.txt) and the email distro list
 # (recipients.txt) live in .txt files -- keep them out of the repo.
 *.txt
+# ...but the pinned dependency list must be tracked.
+!requirements.txt
 # Personal config (coastal.env); the committed coastal.env.example is kept.
 coastal.env
 

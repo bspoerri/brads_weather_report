@@ -1,0 +1,21 @@
+# Python dependencies for the coastal weather report.
+#
+# Tested with Python 3.12 in the conda env "weather_env". The daily
+# launchd schedule (schedule_daily.sh) must point COASTAL_PYTHON at an
+# interpreter where these are installed -- the system /usr/bin/python3
+# does NOT have them, which is what silently broke the 5am send.
+#
+# Recommended setup (conda, because pygrib needs the eccodes C library):
+#     conda create -n weather_env python=3.12
+#     conda activate weather_env
+#     conda install -c conda-forge pygrib      # pulls in eccodes
+#     pip install -r requirements.txt
+#
+# pyobjc is macOS-only; it backs the AppKit/Foundation imports used to
+# render the PDF (report_pdf.py).
+
+numpy==1.26.4
+pandas==2.2.2
+pygrib==2.1.8        # requires the eccodes C library (install via conda)
+requests==2.32.3
+pyobjc-framework-Cocoa==10.1   # macOS only; provides AppKit & Foundation
