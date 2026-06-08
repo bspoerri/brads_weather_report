@@ -7,9 +7,9 @@ PDF, and can email it to a distribution list every morning.
 
 ```
 ⛵ Marine Forecast      📏 tides · 💨 wind · 🌊 seas (next two days)
-🌤️ Conditions          🌧️ precipitation (chance, amount, rain/snow) · 🌅 sunrise & sunset
+🌤️ Conditions          🌧️ precipitation (chance, amount, rain/snow) · ☁️ cloud cover · 🌅 sunrise & sunset · 🌙 moon phase
 🦪 Water Quality        biotoxin / red-tide closures (Maine only)
-📅 Week Ahead Outlook   wind · precipitation · seas · extreme tides
+📅 Week Ahead Outlook   wind · precipitation · cloud cover · seas · extreme tides
 ```
 
 ## What it reports
@@ -20,7 +20,11 @@ PDF, and can email it to a distribution list every morning.
 - **Wind** — peak and lightest wind per day, with direction.
 - **Seas** — wave height, period, and direction.
 - **Precipitation** — chance, expected amount, and **rain vs. snow** type.
+- **Cloud cover** — average cloud cover and a plain-language sky
+  description (clear → overcast) per day, with the clearest time of day.
 - **Sunrise / sunset** — with daylight length.
+- **Moon phase** — current phase and illumination, plus the next full
+  and new moons.
 - **Water quality** — active shellfish biotoxin (red-tide) closures at and
   near your location.
 
@@ -28,7 +32,7 @@ PDF, and can email it to a distribution list every morning.
 
 - **Marine sections (tides, seas)** are shown only when you're within
   **20 miles of a NOAA tide station**. Inland, the report still gives wind,
-  precipitation, and sunrise/sunset.
+  precipitation, cloud cover, sunrise/sunset, and moon phase.
 - **Water quality** is shown only when the location is **in Maine** (NOAA's
   national HAB system doesn't cover the Gulf of Maine).
 
@@ -37,9 +41,10 @@ PDF, and can email it to a distribution list every morning.
 | Section | Source |
 |---|---|
 | Tides | NOAA CO-OPS Tides & Currents API |
-| Wind / precipitation | National Weather Service (`api.weather.gov`) |
+| Wind / precipitation / cloud cover | National Weather Service (`api.weather.gov`) |
 | Seas | NOAA/NWS GFS-Wave model (NOMADS GRIB2) |
 | Sunrise / sunset | NOAA solar position algorithm (computed locally) |
+| Moon phase | Synodic-month calculation (computed locally) |
 | Biotoxin closures | Maine Dept. of Marine Resources public ArcGIS service |
 
 All sources are keyless — no API tokens required.

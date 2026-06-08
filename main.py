@@ -23,7 +23,9 @@ import tide
 import wave
 import wind
 import precipitation
+import cloud
 import sunrise_sunset as sun
+import moon
 import quality
 import display
 import report_pdf
@@ -61,7 +63,8 @@ def build_report():
     coastal  = coast.is_coastal()
     in_maine = coast.is_in_maine()
 
-    nws_df = nws.hourly_forecast()
+    nws_df   = nws.hourly_forecast()
+    cloud_df = nws.sky_cover()
 
     report = display.print_greeting()
     if station_dist is not None:
@@ -96,8 +99,12 @@ def build_report():
     report += display.print_header('🌤️ Conditions')
     report += '\n🌧️ PRECIPITATION\n'
     report += precipitation.precip_summary(nws_df, next_two_days)
+    report += '☁️ CLOUD COVER\n'
+    report += cloud.cloud_summary(cloud_df, next_two_days)
     report += '🌅 SUNRISE & SUNSET\n'
     report += sun.sun_summary(next_two_days)
+    report += '🌙 MOON PHASE\n'
+    report += moon.moon_summary()
 
     # ---- Water quality (Maine only): biotoxin closures ------------
     if in_maine:
@@ -108,6 +115,7 @@ def build_report():
     report += display.print_header('📅 Week Ahead Outlook') + '\n'
     report += wind.wind_week_ahead(nws_df) + '\n'
     report += precipitation.precip_week_ahead(nws_df) + '\n'
+    report += cloud.cloud_week_ahead(cloud_df) + '\n'
     if have_waves:
         report += wave.wave_week_ahead(wave_df) + '\n'
     if tide_df is not None:

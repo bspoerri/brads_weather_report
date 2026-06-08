@@ -17,11 +17,15 @@ MM_TO_IN   = 1 / 25.4
 _points  = None
 _hourly  = None
 _precip  = None
+_grid    = None
+_sky     = None
 
 HOURLY_COLUMNS = [
     'local_date', 'local_time', 'pop', 'short',
     'wind_kts', 'wind_dir', 'temp_f',
 ]
+
+SKY_COLUMNS = ['local_date', 'local_time', 'sky_pct']
 
 
 def _get_points():
@@ -99,6 +103,18 @@ def hourly_forecast():
     return _hourly
 
 
+def _get_grid_data():
+    """Cached `/gridpoints` forecast properties (precip, sky cover,
+    etc.). Returns {} on failure. Shared so precip and cloud cover make
+    a single network call."""
+    global _grid
+    if _grid is None:
+        url  = _get_points().get('forecastGridData')
+        data = api.get_json_request(url) if url else None
+        _grid = data['properties'] if (data and 'properties' in data) else {}
+    return _grid
+
+
 def _sum_by_local_day(values):
     """
     Aggregate an NWS gridpoint time-series (list of
@@ -128,13 +144,11 @@ def precip_detail():
     if _precip is not None:
         return _precip
 
-    url  = _get_points().get('forecastGridData')
-    data = api.get_json_request(url) if url else None
-    if not data or 'properties' not in data:
+    props = _get_grid_data()
+    if not props:
         _precip = {}
         return _precip
 
-    props = data['properties']
     rain  = _sum_by_local_day(props.get('quantitativePrecipitation', {}).get('values'))
     snow  = _sum_by_local_day(props.get('snowfallAmount', {}).get('values'))
 
@@ -143,3 +157,40 @@ def precip_detail():
         for date in set(rain) | set(snow)
     }
     return _precip
+
+
+def sky_cover():
+    """
+    NWS gridpoint sky cover (cloud cover) as a DataFrame, one row per
+    forecast interval:
+        local_date  '%Y%m%d'
+        local_time  12-hour clock
+        sky_pct     cloud cover (%)
+
+    Returns an empty DataFrame if the gridpoint forecast can't be
+    retrieved.
+    """
+    global _sky
+    if _sky is not None:
+        return _sky
+
+    props  = _get_grid_data()
+    values = props.get('skyCover', {}).get('values') if props else None
+    if not values:
+        _sky = pd.DataFrame(columns=SKY_COLUMNS)
+        return _sky
+
+    # gridpoint validTime is '<ISO UTC>/<duration>'; attribute each
+    # interval to its start time, converted to local.
+    starts = pd.to_datetime([v['validTime'].split('/')[0] for v in values],
+                            utc=True)
+    local  = to_local_time(pd.Series(starts))
+    df = pd.DataFrame({
+        'local_date': to_datestring(local),
+        'local_time': to_12hr(local.dt.strftime('%H:%M')),
+        'sky_pct':    [v.get('value') for v in values],
+    }).dropna(subset=['sky_pct'])
+    df['sky_pct'] = df['sky_pct'].astype(float)
+
+    _sky = df[SKY_COLUMNS].copy()
+    return _sky
