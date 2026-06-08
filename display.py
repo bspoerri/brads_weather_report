@@ -3,13 +3,18 @@ Plain-text presentation helpers: the report greeting and the centered
 section headers. These return strings (despite the print_* names) so
 the caller can assemble the full report before printing.
 """
+from datetime import datetime
+from time_helpers import LOCAL_TZ
+
 MAX_LEN = 75
 
 
 def print_greeting():
-    """Return the report's title line."""
+    """Return the report's title line and the time it was generated."""
+    now = datetime.now(LOCAL_TZ)
     greeting = ("BRAD'S DAILY WEATHER REPORT " + "\u2615"
                 + "\n"
+                + f"Generated {now:%A %m/%d/%Y at %I:%M %p %Z}\n"
     )
     return greeting
 
