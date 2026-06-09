@@ -1,18 +1,34 @@
 """
-Email the report PDF through the macOS Mail.app via AppleScript.
+Email the report PDF over SMTP.
 
-Uses the already-configured Mail account, so there are no SMTP
-credentials to store. The sending account (COASTAL_SENDER) must exist
-in Mail > Settings > Accounts. The first send may trigger a one-time
-"control Mail.app" automation permission prompt.
+Sends through a plain SMTP server (Gmail by default), so the job has no
+GUI dependency and runs reliably unattended -- e.g. from the 5am launchd
+agent while the Mac is asleep/locked and no one is logged in. (The old
+implementation drove Mail.app via AppleScript, which timed out under
+launchd; see git history.)
+
+Configuration comes from coastal.env (see coastal.env.example):
+
+    COASTAL_SENDER          From: address (also the default SMTP login)
+    COASTAL_SMTP_PASSWORD   SMTP password -- for Gmail, an App Password
+                            (https://myaccount.google.com/apppasswords),
+                            NOT your normal account password
+    COASTAL_SMTP_HOST       SMTP server   (default: smtp.gmail.com)
+    COASTAL_SMTP_PORT       SMTP port     (default: 587, STARTTLS; 465 = SSL)
+    COASTAL_SMTP_USER       SMTP login    (default: COASTAL_SENDER)
 """
 import os
-import subprocess
+import smtplib
+import ssl
+from email.message import EmailMessage
 
 # Resolved at send time from COASTAL_SENDER (see coastal.env); the
 # placeholder keeps any personal address out of committed source.
 PLACEHOLDER_SENDER = 'you@example.com'
 RECIPIENTS_FILE    = 'recipients.txt'
+
+DEFAULT_SMTP_HOST  = 'smtp.gmail.com'
+DEFAULT_SMTP_PORT  = 587
 
 
 def load_recipients(path=RECIPIENTS_FILE):
@@ -24,37 +40,18 @@ def load_recipients(path=RECIPIENTS_FILE):
                 if line.strip() and not line.lstrip().startswith('#')]
 
 
-def _esc(s):
-    """Escape a value for embedding in an AppleScript string literal."""
-    return str(s).replace('\\', '\\\\').replace('"', '\\"')
+def _build_message(pdf_abs, recipients, sender, subject, body):
+    """Compose an EmailMessage with the PDF attached."""
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From']    = sender
+    msg['To']      = ', '.join(recipients)
+    msg.set_content(body)
 
-
-def _build_script(pdf_abs, recipients, sender, subject, body):
-    """Compose the AppleScript that creates an outgoing Mail message
-    with the PDF attached and sends it to every recipient."""
-    lines = [
-        'tell application "Mail"',
-        ('  set newMessage to make new outgoing message with properties '
-         '{subject:"%s", content:"%s", visible:false}'
-         % (_esc(subject), _esc(body))),
-        '  tell newMessage',
-        '    set sender to "%s"' % _esc(sender),
-    ]
-    for r in recipients:
-        lines.append('    make new to recipient at end of to recipients '
-                     'with properties {address:"%s"}' % _esc(r))
-    # A short delay lets Mail finish attaching before the message is sent
-    # (a well-known AppleScript/Mail timing quirk).
-    lines += [
-        '    make new attachment with properties '
-        '{file name:(POSIX file "%s")} at after the last paragraph'
-        % _esc(pdf_abs),
-        '  end tell',
-        '  delay 2',
-        '  send newMessage',
-        'end tell',
-    ]
-    return '\n'.join(lines)
+    with open(pdf_abs, 'rb') as f:
+        msg.add_attachment(f.read(), maintype='application', subtype='pdf',
+                           filename=os.path.basename(pdf_abs))
+    return msg
 
 
 def send_pdf(pdf_path, recipients=None, sender=None,
@@ -80,14 +77,34 @@ def send_pdf(pdf_path, recipients=None, sender=None,
         print(f'Email: PDF not found ({pdf_path}); skipping send.')
         return False
 
+    host     = os.environ.get('COASTAL_SMTP_HOST', DEFAULT_SMTP_HOST)
+    port     = int(os.environ.get('COASTAL_SMTP_PORT', DEFAULT_SMTP_PORT))
+    user     = os.environ.get('COASTAL_SMTP_USER', sender)
+    password = os.environ.get('COASTAL_SMTP_PASSWORD')
+    if not password:
+        print('Email: COASTAL_SMTP_PASSWORD is not set; skipping send. '
+              '(For Gmail, create an App Password and add it to coastal.env.)')
+        return False
+
     body = body or 'Your coastal report is attached.'
-    script = _build_script(os.path.abspath(pdf_path), recipients,
-                           sender, subject, body)
+    msg  = _build_message(os.path.abspath(pdf_path), recipients,
+                          sender, subject, body)
+
     try:
-        subprocess.run(['osascript', '-e', script],
-                       check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        print(f'Email: send failed: {e.stderr.strip() or e}')
+        context = ssl.create_default_context()
+        # Port 465 speaks TLS from the start (SMTPS); everything else
+        # (e.g. 587) connects in the clear and upgrades via STARTTLS.
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=context, timeout=60) as s:
+                s.login(user, password)
+                s.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port, timeout=60) as s:
+                s.starttls(context=context)
+                s.login(user, password)
+                s.send_message(msg)
+    except (smtplib.SMTPException, OSError) as e:
+        print(f'Email: send failed: {e}')
         return False
     print(f'Email: sent to {", ".join(recipients)} (from {sender}).')
     return True

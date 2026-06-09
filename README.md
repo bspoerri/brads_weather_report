@@ -51,8 +51,8 @@ All sources are keyless — no API tokens required.
 
 ## Requirements
 
-- **macOS** (PDF rendering uses AppKit; emailing uses Mail.app; scheduling
-  uses launchd)
+- **macOS** (PDF rendering uses AppKit; scheduling uses launchd). Emailing
+  is provider-agnostic SMTP, so it works headless/unattended.
 - **Python 3.12** with: `requests`, `pandas`, `numpy`, `pygrib`, `pyobjc`
   (the `weather_env` conda environment has these)
 
@@ -63,7 +63,8 @@ All sources are keyless — no API tokens required.
 cp coastal.env.example coastal.env
 #   then edit coastal.env:
 #     COASTAL_COORDS=43.7965,-70.2489     your lat,lng
-#     COASTAL_SENDER=you@gmail.com        Mail.app account to send from
+#     COASTAL_SENDER=you@gmail.com        address to send from
+#     COASTAL_SMTP_PASSWORD=...           SMTP/Gmail App Password
 #     COASTAL_CONTACT=app (you@gmail.com) NWS User-Agent contact
 
 # 2. (Optional) set up the email distribution list
@@ -89,13 +90,15 @@ monospaced font and full-color emoji via macOS AppKit (falls back to
 
 ### Email
 
-Sending uses **Mail.app via AppleScript**, so there are no SMTP credentials
-to store. Two one-time prerequisites:
+Sending uses **SMTP** (Gmail by default), so it has no GUI dependency and
+runs reliably from the unattended 5am scheduler. Configure in `coastal.env`:
 
-1. `COASTAL_SENDER` must be an account configured in **Mail → Settings →
-   Accounts**.
-2. The first send triggers a macOS prompt to allow controlling Mail —
-   approve it (System Settings → Privacy & Security → Automation).
+- `COASTAL_SENDER` — the From: address (also the default SMTP login).
+- `COASTAL_SMTP_PASSWORD` — for Gmail, an **App Password**
+  (https://myaccount.google.com/apppasswords), *not* your normal password.
+- `COASTAL_SMTP_HOST` / `COASTAL_SMTP_PORT` — default to `smtp.gmail.com:587`
+  (STARTTLS; use `465` for SSL). Override for another provider.
+- `COASTAL_SMTP_USER` — optional; defaults to `COASTAL_SENDER`.
 
 Manage recipients with `./recipients.sh add|remove|list <email>`.
 
@@ -107,8 +110,9 @@ Manage recipients with `./recipients.sh add|remove|list <email>`.
 ```
 
 The agent runs `run_daily.sh` (which passes `--email`), logging to `logs/`.
-Because it uses launchd, it runs in your logged-in session — the color-emoji
-PDF and Mail.app sending work as long as you're logged in.
+Email goes out over SMTP, so it sends even while the Mac is asleep/locked.
+(The color-emoji PDF rendering still uses AppKit, which works best in your
+logged-in session.)
 
 ## Project structure
 
@@ -127,7 +131,7 @@ api_endpoint.py     HTTP helper (JSON + GRIB), default User-Agent
 time_helpers.py     date/time formatting + local timezone
 display.py          greeting and section headers
 report_pdf.py       text -> PDF (AppKit, cupsfilter fallback)
-emailer.py          email the PDF via Mail.app
+emailer.py          email the PDF via SMTP
 cache_location.py   write the coordinate cache
 check_location.py   read the coordinate cache; nearest-station search
 recipients.sh       manage the email distribution list
