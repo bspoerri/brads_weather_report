@@ -10,7 +10,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import api_endpoint as api
-from time_helpers import time_dict, to_12hr, to_display_date
+from time_helpers import time_dict, to_12hr
 
 STATIONS_URL = ('https://api.tidesandcurrents.noaa.gov'
                 '/mdapi/prod/webapi/stations.json')
@@ -193,25 +193,4 @@ def tide_summary(df, days):
                    + f'{desc.title()}\n'
                    + f'  High Tides | {" & ".join(highs)}\n'
                    + f'  Low Tides  | {" & ".join(lows)}\n\n')
-    return content
-
-
-def tide_week_ahead(df):
-    """List only the outlier (very high / very low) tides over the
-    coming week, with date, time, and height."""
-    content  = '📏 Extreme Tides (week ahead):\n'
-    extremes = df[df['outlier'].isin([1, -1])]
-
-    if extremes.empty:
-        return content + 'No extreme tides in the week ahead.\n'
-
-    for record in extremes.index:
-        label   = ('VERY HIGH' if extremes.loc[record, 'outlier'] == 1
-                   else 'VERY LOW')
-        content = (content
-                   + '  '
-                   + f'{to_display_date(extremes.loc[record, "date"])} '
-                   + f'{extremes.loc[record, "12hr_time"]} | '
-                   + f'{extremes.loc[record, "tide_ft"]:.1f} ft | '
-                   + label + '\n')
     return content

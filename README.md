@@ -7,9 +7,9 @@ PDF, and can email it to a distribution list every morning.
 
 ```
 ⛵ Marine Forecast      📏 tides · 💨 wind · 🌊 seas (next two days)
-🌤️ Conditions          🌧️ precipitation (chance, amount, rain/snow) · ☁️ cloud cover · 🌅 sunrise & sunset · 🌙 moon phase
+🌤️ Conditions          🌡️ temperature · 🌧️ precipitation (chance, amount, rain/snow) · ☁️ cloud cover · 🌅 sunrise & sunset · 🌙 moon phase
 🦪 Water Quality        biotoxin / red-tide closures (Maine only)
-📅 Week Ahead Outlook   wind · precipitation · cloud cover · seas · extreme tides
+📅 Week Ahead Highlights  one line per standout day — heat, storms, clear nights for stargazing, rough seas, extreme tides
 ```
 
 ## What it reports
@@ -19,6 +19,7 @@ PDF, and can email it to a distribution list every morning.
   history.
 - **Wind** — peak and lightest wind per day, with direction.
 - **Seas** — wave height, period, and direction.
+- **Temperature** — daily high and low, with the warmest time of day.
 - **Precipitation** — chance, expected amount, and **rain vs. snow** type.
 - **Cloud cover** — average cloud cover and a plain-language sky
   description (clear → overcast) per day, with the clearest time of day.
@@ -27,12 +28,16 @@ PDF, and can email it to a distribution list every morning.
   and new moons.
 - **Water quality** — active shellfish biotoxin (red-tide) closures at and
   near your location.
+- **Week ahead** — a consolidated highlights digest: one line per standout
+  day over the forecast horizon, flagging only what's notable (breezy, hot
+  or freezing, wet, clear or overcast, clear nights for stargazing, rough
+  seas, and extreme tides). Quiet days are omitted.
 
 ### Location gating
 
 - **Marine sections (tides, seas)** are shown only when you're within
   **20 miles of a NOAA tide station**. Inland, the report still gives wind,
-  precipitation, cloud cover, sunrise/sunset, and moon phase.
+  temperature, precipitation, cloud cover, sunrise/sunset, and moon phase.
 - **Water quality** is shown only when the location is **in Maine** (NOAA's
   national HAB system doesn't cover the Gulf of Maine).
 
@@ -41,7 +46,7 @@ PDF, and can email it to a distribution list every morning.
 | Section | Source |
 |---|---|
 | Tides | NOAA CO-OPS Tides & Currents API |
-| Wind / precipitation / cloud cover | National Weather Service (`api.weather.gov`) |
+| Wind / temperature / precipitation / cloud cover | National Weather Service (`api.weather.gov`) |
 | Seas | NOAA/NWS GFS-Wave model (NOMADS GRIB2) |
 | Sunrise / sunset | NOAA solar position algorithm (computed locally) |
 | Moon phase | Synodic-month calculation (computed locally) |

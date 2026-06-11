@@ -4,7 +4,6 @@ Surface wind from the NWS point forecast (via nws.py).
 Sourced from the NWS rather than the GFS-Wave model so it is valid
 inland as well as on the coast.
 """
-from time_helpers import to_display_date
 
 
 def _speed_phrase(row):
@@ -42,34 +41,4 @@ def wind_summary(df, days):
                    + f'peaking {_speed_phrase(peak)} at {peak["local_time"]}.\n'
                    + f'Lightest winds {_speed_phrase(low)} '
                    + f'at {low["local_time"]}.\n\n')
-    return content
-
-
-def wind_week_ahead(df):
-    """Notably breezy and calm days over the forecast horizon."""
-    if df.empty:
-        return '💨 Wind\nWind outlook unavailable.\n'
-
-    daily = df.groupby('local_date')['wind_kts'].mean()
-    calm_days  = []
-    windy_days = []
-    for day, avg in daily.items():
-        entry = {'date': day, 'avg': round(avg, 1)}
-        if avg < 5:
-            calm_days.append(entry)
-        elif avg > 12:
-            windy_days.append(entry)
-
-    def format_days(days_list):
-        return ''.join(
-            f'  {to_display_date(d["date"])} | Avg Wind: {d["avg"]} kts\n'
-            for d in days_list
-        )
-
-    content  = '💨 Wind\n'
-    content += ('Calm Days:\n'  + format_days(calm_days)
-                if calm_days  else 'No notably calm days ahead.\n')
-    content += '\n'
-    content += ('Breezy Days:\n' + format_days(windy_days)
-                if windy_days else 'No notably breezy days ahead.\n')
     return content

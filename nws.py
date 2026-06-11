@@ -25,7 +25,7 @@ HOURLY_COLUMNS = [
     'wind_kts', 'wind_dir', 'temp_f',
 ]
 
-SKY_COLUMNS = ['local_date', 'local_time', 'sky_pct']
+SKY_COLUMNS = ['local_date', 'local_time', 'hour', 'sky_pct']
 
 
 def _get_points():
@@ -188,6 +188,7 @@ def sky_cover():
     df = pd.DataFrame({
         'local_date': to_datestring(local),
         'local_time': to_12hr(local.dt.strftime('%H:%M')),
+        'hour':       local.dt.hour,
         'sky_pct':    [v.get('value') for v in values],
     }).dropna(subset=['sky_pct'])
     df['sky_pct'] = df['sky_pct'].astype(float)

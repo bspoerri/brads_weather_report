@@ -23,10 +23,12 @@ import tide
 import wave
 import wind
 import precipitation
+import temperature
 import cloud
 import sunrise_sunset as sun
 import moon
 import quality
+import week_ahead
 import display
 import report_pdf
 import emailer
@@ -97,7 +99,9 @@ def build_report():
 
     # ---- Conditions (always): precipitation, sun ------------------
     report += display.print_header('🌤️ Conditions')
-    report += '\n🌧️ PRECIPITATION\n'
+    report += '\n🌡️ TEMPERATURE\n'
+    report += temperature.temp_summary(nws_df, next_two_days)
+    report += '🌧️ PRECIPITATION\n'
     report += precipitation.precip_summary(nws_df, next_two_days)
     report += '☁️ CLOUD COVER\n'
     report += cloud.cloud_summary(cloud_df, next_two_days)
@@ -111,15 +115,10 @@ def build_report():
         report += display.print_header('🦪 Water Quality')
         report += '\n' + quality.quality_summary()
 
-    # ---- Week ahead outlook ---------------------------------------
-    report += display.print_header('📅 Week Ahead Outlook') + '\n'
-    report += wind.wind_week_ahead(nws_df) + '\n'
-    report += precipitation.precip_week_ahead(nws_df) + '\n'
-    report += cloud.cloud_week_ahead(cloud_df) + '\n'
-    if have_waves:
-        report += wave.wave_week_ahead(wave_df) + '\n'
-    if tide_df is not None:
-        report += tide.tide_week_ahead(tide_df)
+    # ---- Week ahead highlights ------------------------------------
+    waves = wave_df if have_waves else None
+    report += display.print_header('📅 Week Ahead Highlights') + '\n'
+    report += week_ahead.week_ahead_digest(nws_df, cloud_df, waves, tide_df)
 
     return report
 

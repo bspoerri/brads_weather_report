@@ -6,7 +6,6 @@ with the gridpoint forecast amounts (how much, and rain vs. snow).
 Works inland and on the coast.
 """
 import nws
-from time_helpers import to_display_date
 
 DRY_THRESHOLD   = 20    # peak % below which a day reads as "dry"
 WET_THRESHOLD   = 50    # peak % at/above which a day is flagged "wet"
@@ -36,7 +35,7 @@ def _amount_phrase(amounts):
     if amount < TRACE_THRESHOLD:
         return kind, ''
     unit = 'in snow' if kind == 'snow' else 'in'
-    return kind, f', ~{amount:.2f} {unit} expected'
+    return kind, f', ~{amount:.2f}{unit} expected'
 
 
 def precip_summary(df, days):
@@ -63,26 +62,4 @@ def precip_summary(df, days):
             content += (f'{desc.upper()} up to a {max_pop}% chance of {kind}'
                         f'{amount_phrase}, highest around {peak["local_time"]} '
                         f'({peak["short"].lower()}).\n\n')
-    return content
-
-
-def precip_week_ahead(df):
-    """Days over the forecast horizon with a notable chance of precip."""
-    if df.empty:
-        return '🌧️ Precipitation\nPrecipitation outlook unavailable.\n'
-
-    amounts_by_day = nws.precip_detail()
-    daily = df.groupby('local_date')['pop'].max()
-    wet_days = [(day, int(pop)) for day, pop in daily.items()
-                if pop >= WET_THRESHOLD]
-
-    content = '🌧️ Precipitation\n'
-    if not wet_days:
-        return content + 'No notably wet days ahead.\n'
-
-    content += 'Wet Days:\n'
-    for day, pop in wet_days:
-        kind, amount_phrase = _amount_phrase(amounts_by_day.get(day, {}))
-        content += (f'  {to_display_date(day)} | {pop}% chance of {kind}'
-                    f'{amount_phrase}\n')
     return content

@@ -13,7 +13,7 @@ import numpy as np
 import api_endpoint as api
 from datetime import datetime, timezone
 from time_helpers import (
-    time_dict, to_local_time, to_datestring, to_12hr, to_display_date
+    time_dict, to_local_time, to_datestring, to_12hr
 )
 
 CWD = os.getcwd()
@@ -240,34 +240,4 @@ def wave_summary(df, days):
                    + f'Smallest waves around {min_height} ft '
                    + f'out of the {min_wave_dir} '
                    + f'at {min_period}s periods around {min_time}.\n\n')
-    return content
-
-
-def wave_week_ahead(df):
-    """Classify each day of the forecast as calm (<2 ft avg) or rough
-    (>6 ft avg) seas, by daily mean wave height."""
-    height_df    = df[df['short_name'] == 'Wave Height']
-    daily_height = height_df.groupby('local_date')['value'].mean()
-
-    calm_days  = []
-    rough_days = []
-    for day, avg_height in daily_height.items():
-        entry = {'date': day, 'avg_height': round(avg_height, 1)}
-        if avg_height < 2:
-            calm_days.append(entry)
-        elif avg_height > 6:
-            rough_days.append(entry)
-
-    def format_days(days_list):
-        return ''.join(
-            f'  {to_display_date(d["date"])} | Avg Seas: {d["avg_height"]} ft\n'
-            for d in days_list
-        )
-
-    content  = '🌊 Seas\n'
-    content += ('Calm Days:\n'  + format_days(calm_days)
-                if calm_days  else 'No notably calm seas ahead.\n')
-    content += '\n'
-    content += ('Rough Days:\n' + format_days(rough_days)
-                if rough_days else 'No notably rough seas ahead.\n')
     return content

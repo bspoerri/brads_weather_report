@@ -5,7 +5,6 @@ The gridpoint 'skyCover' field gives cloud cover as a percentage over
 the forecast horizon. We average it per day and translate it into a
 plain-language sky description. Works inland and on the coast.
 """
-from time_helpers import to_display_date
 
 
 def _sky_label(pct):
@@ -40,18 +39,4 @@ def cloud_summary(df, days):
         content += (f'{desc.upper()} {_sky_label(avg)}, averaging {avg}% cloud '
                     f'cover (clearest around {clearest["local_time"]} at '
                     f'{int(clearest["sky_pct"])}%).\n\n')
-    return content
-
-
-def cloud_week_ahead(df):
-    """Average cloud cover per day over the forecast horizon."""
-    if df.empty:
-        return '☁️ Cloud Cover\nCloud cover outlook unavailable.\n'
-
-    daily   = df.groupby('local_date')['sky_pct'].mean()
-    content = '☁️ Cloud Cover\n'
-    for day, pct in daily.items():
-        avg = int(round(pct))
-        content += (f'  {to_display_date(day)} | {avg}% cloud cover '
-                    f'({_sky_label(avg)})\n')
     return content
